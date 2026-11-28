@@ -1,0 +1,30 @@
+{
+  "smoke": {
+    "config": "base",
+    "mix": "uz=0.65,en=0.35",
+    "micro-batch": 8,
+    "grad-accum": 32,
+    "total-tokens": 3e9,
+    "lr": 6e-4,
+    "warmup-steps": 700,
+    "eval-interval": 30,
+    "save-interval": 1000000,
+    "log-interval": 5,
+    "time-limit-hours": 0.3,
+    "compile": true
+  },
+  "full": {
+    "config": "base",
+    "mix": "uz=0.65,en=0.35",
+    "micro-batch": 8,
+    "grad-accum": 32,
+    "total-tokens": 3e9,
+    "lr": 6e-4,
+    "warmup-steps": 700,
+    "eval-interval": 250,
+    "save-interval": 250,
+    "log-interval": 10,
+    "time-limit-hours": 11.3,
+    "compile": true
+  }
+}

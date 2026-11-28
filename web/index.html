@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OMZU</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%236d5dfc'/%3E%3Cstop offset='.55' stop-color='%23a855f7'/%3E%3Cstop offset='1' stop-color='%2322d3ee'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='28' fill='url(%23g)'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #faf9f7; --surface: #ffffff; --surface-2: #f4f2ee; --sidebar: #f3f1ed;
+  --text: #1c1b19; --muted: #6f6a62; --faint: #a19b91; --border: #e6e2da; --border-strong: #d6d0c5;
+  --accent: #6d5dfc; --accent-2: #a855f7; --accent-3: #22d3ee;
+  --user-bubble: #efece6; --shadow: 0 1px 2px rgba(20,18,14,.04), 0 8px 24px rgba(20,18,14,.06);
+  --shadow-lg: 0 12px 48px rgba(20,18,14,.14); --code-bg: #f1eee8; --danger: #e5484d; --ok: #30a46c;
+  --grad: linear-gradient(135deg, var(--accent), var(--accent-2) 55%, var(--accent-3));
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e0e11; --surface: #16161b; --surface-2: #1c1c23; --sidebar: #111115;
+    --text: #ecebf1; --muted: #9b99a8; --faint: #6c6a78; --border: #25242c; --border-strong: #34333d;
+    --user-bubble: #22212a; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    --shadow-lg: 0 12px 48px rgba(0,0,0,.55); --code-bg: #1f1e26; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e0e11; --surface: #16161b; --surface-2: #1c1c23; --sidebar: #111115;
+  --text: #ecebf1; --muted: #9b99a8; --faint: #6c6a78; --border: #25242c; --border-strong: #34333d;
+  --user-bubble: #22212a; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  --shadow-lg: 0 12px 48px rgba(0,0,0,.55); --code-bg: #1f1e26; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font: 15px/1.6 "Inter", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased; overflow: hidden;
+  transition: background .35s ease, color .35s ease;
+}
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+textarea { font: inherit; color: inherit; }
+::selection { background: color-mix(in srgb, var(--accent) 28%, transparent); }
+
+.app { display: flex; height: 100vh; height: 100dvh; }
+
+.sidebar {
+  width: 272px; flex: none; background: var(--sidebar); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; transition: margin-left .35s cubic-bezier(.2,.8,.2,1), background .35s;
+  z-index: 20;
+}
+.sidebar.collapsed { margin-left: -272px; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 18px 16px 10px; }
+.brand-name { font-weight: 700; letter-spacing: .14em; font-size: 15px; }
+.brand-sub { font-size: 11px; color: var(--faint); letter-spacing: .02em; }
+.icon-btn {
+  width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: var(--muted);
+  transition: background .2s, color .2s, transform .15s;
+}
+.icon-btn:hover { background: var(--surface-2); color: var(--text); }
+.icon-btn:active { transform: scale(.94); }
+.icon-btn svg { width: 18px; height: 18px; }
+.new-chat {
+  margin: 8px 12px 6px; padding: 10px 12px; border-radius: 12px; display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); font-weight: 550;
+  transition: transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .2s, border-color .2s;
+}
+.new-chat:hover { transform: translateY(-1px); border-color: var(--border-strong); }
+.new-chat .plus { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; background: var(--grad); color: #fff; }
+.conv-list { flex: 1; overflow-y: auto; padding: 6px 8px 12px; scrollbar-width: thin; }
+.conv-group { font-size: 11.5px; color: var(--faint); padding: 14px 10px 6px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; }
+.conv {
+  display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 10px; color: var(--muted);
+  font-size: 14px; cursor: pointer; transition: background .18s, color .18s; animation: fadeIn .35s ease both;
+}
+.conv:hover { background: var(--surface-2); color: var(--text); }
+.conv.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.conv span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conv .del { opacity: 0; width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; color: var(--faint); transition: opacity .15s, background .15s; }
+.conv:hover .del { opacity: 1; }
+.conv .del:hover { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+.side-foot { border-top: 1px solid var(--border); padding: 10px 10px 12px; display: grid; gap: 4px; }
+.side-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; color: var(--muted); font-size: 14px; transition: background .18s, color .18s; width: 100%; text-align: left; }
+.side-row:hover { background: var(--surface-2); color: var(--text); }
+.side-row svg { width: 17px; height: 17px; flex: none; }
+.status-pill { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--faint); padding: 6px 10px; }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: #f5a524; box-shadow: 0 0 0 0 rgba(245,165,36,.6); animation: ping 2.2s infinite; }
+.status-dot.model { background: var(--ok); }
+
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
+.topbar { height: 54px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 14px; }
+.topbar .title { font-size: 14px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scroller { flex: 1; overflow-y: auto; scroll-behavior: smooth; scrollbar-width: thin; }
+.thread { max-width: 760px; margin: 0 auto; padding: 8px 20px 40px; }
+
+.orb { position: relative; border-radius: 50%; flex: none; isolation: isolate; }
+.orb::before, .orb::after { content: ""; position: absolute; inset: 0; border-radius: 50%; }
+.orb::before {
+  background: conic-gradient(from 0deg, var(--accent), var(--accent-2), var(--accent-3), #f472b6, var(--accent));
+  animation: spin 6s linear infinite; filter: saturate(1.1);
+}
+.orb::after {
+  inset: 12%; background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.95), rgba(255,255,255,.15) 38%, transparent 60%);
+  mix-blend-mode: soft-light; animation: drift 7s ease-in-out infinite;
+}
+.orb.sm { width: 28px; height: 28px; }
+.orb.md { width: 34px; height: 34px; }
+.orb.xl { width: 96px; height: 96px; }
+.orb.xl .glow { position: absolute; inset: -40%; border-radius: 50%; background: var(--grad); filter: blur(42px); opacity: .35; z-index: -1; animation: breathe 5s ease-in-out infinite; }
+.orb.busy::before { animation-duration: 1.4s; }
+.orb.busy { animation: pulse 1.6s ease-in-out infinite; }
+
+.welcome { min-height: calc(100% - 10px); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 20px 0; }
+.welcome h1 {
+  font-size: clamp(26px, 4vw, 38px); font-weight: 650; letter-spacing: -.02em; margin: 28px 0 6px;
+  background: linear-gradient(90deg, var(--text), var(--text) 40%, var(--accent-2) 60%, var(--text) 80%);
+  background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: rise .7s cubic-bezier(.2,.8,.2,1) both, sheen 6s ease-in-out 1s infinite;
+}
+.welcome p { color: var(--muted); margin: 0 0 30px; animation: rise .7s .08s cubic-bezier(.2,.8,.2,1) both; }
+.suggestions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; max-width: 640px; }
+.sugg {
+  text-align: left; padding: 14px 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border);
+  box-shadow: var(--shadow); transition: transform .25s cubic-bezier(.2,.8,.2,1), border-color .25s, box-shadow .25s;
+  animation: rise .6s cubic-bezier(.2,.8,.2,1) both;
+}
+.sugg:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); box-shadow: var(--shadow-lg); }
+.sugg b { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
+.sugg small { color: var(--muted); font-size: 13px; }
+.sugg .em { font-size: 17px; }
+
+.msg { margin: 26px 0; animation: msgIn .45s cubic-bezier(.2,.8,.2,1) both; }
+.msg.user { display: flex; justify-content: flex-end; }
+.msg.user .bubble {
+  background: var(--user-bubble); padding: 10px 16px; border-radius: 20px 20px 6px 20px; max-width: 82%;
+  white-space: pre-wrap; word-wrap: break-word;
+}
+.msg.bot { display: grid; grid-template-columns: 34px 1fr; gap: 14px; }
+.msg.bot .orb { margin-top: 2px; }
+.msg.bot .body { min-width: 0; }
+.content { word-wrap: break-word; }
+.content p { margin: 0 0 10px; }
+.content p:last-child { margin-bottom: 0; }
+.content ul, .content ol { margin: 6px 0 10px; padding-left: 22px; }
+.content li { margin: 3px 0; }
+.content code { background: var(--code-bg); padding: 1px 6px; border-radius: 6px; font: 13px/1.5 "Cascadia Code", Consolas, monospace; }
+.content pre { background: var(--code-bg); padding: 12px 14px; border-radius: 12px; overflow-x: auto; }
+.content pre code { background: none; padding: 0; }
+.content strong { font-weight: 650; }
+.content em { color: var(--muted); }
+.content a { color: var(--accent); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+.caret::after {
+  content: ""; display: inline-block; width: 8px; height: 8px; margin-left: 4px; border-radius: 50%;
+  background: var(--grad); vertical-align: middle; animation: blink 1s ease-in-out infinite;
+}
+.status {
+  display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); margin-bottom: 6px;
+  background: linear-gradient(90deg, var(--muted) 0%, var(--muted) 35%, var(--text) 50%, var(--muted) 65%, var(--muted) 100%);
+  background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: shimmer 1.8s linear infinite;
+}
+.sources { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 10px; }
+.chip {
+  font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border);
+  color: var(--muted); display: inline-flex; align-items: center; gap: 6px; animation: fadeIn .4s ease both;
+}
+.chip i { width: 6px; height: 6px; border-radius: 50%; background: var(--grad); }
+.actions { display: flex; gap: 2px; margin-top: 10px; opacity: 0; transition: opacity .25s; }
+.msg.bot:hover .actions, .actions.show { opacity: 1; }
+.actions .icon-btn { width: 30px; height: 30px; border-radius: 8px; }
+.actions .icon-btn svg { width: 16px; height: 16px; }
+.actions .icon-btn.on { color: var(--accent); }
+.actions .icon-btn.on.neg { color: var(--danger); }
+.correction { margin-top: 10px; display: grid; gap: 8px; animation: rise .35s ease both; }
+.correction textarea { width: 100%; min-height: 70px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); padding: 10px 12px; resize: vertical; outline: none; }
+.correction textarea:focus { border-color: var(--accent); }
+.correction .row { display: flex; gap: 8px; justify-content: flex-end; }
+.btn { padding: 7px 14px; border-radius: 10px; font-size: 13.5px; font-weight: 550; border: 1px solid var(--border); background: var(--surface); transition: transform .15s, background .2s; }
+.btn:hover { background: var(--surface-2); }
+.btn.primary { background: var(--grad); color: #fff; border: 0; }
+.btn:active { transform: scale(.97); }
+
+.card {
+  border-radius: 18px; padding: 16px 18px; margin: 4px 0 12px; border: 1px solid var(--border); background: var(--surface);
+  box-shadow: var(--shadow); animation: cardIn .55s cubic-bezier(.2,.8,.2,1) both; overflow: hidden; position: relative;
+}
+.weather { color: #fff; border: 0; background: linear-gradient(135deg, #3b82f6, #6366f1 60%, #8b5cf6); }
+.weather.warm { background: linear-gradient(135deg, #f59e0b, #f97316 55%, #ec4899); }
+.weather.cold { background: linear-gradient(135deg, #0ea5e9, #3b82f6 55%, #6366f1); }
+.weather.rain { background: linear-gradient(135deg, #475569, #334155 55%, #1e3a8a); }
+.weather .w-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.weather .city { font-weight: 600; opacity: .95; }
+.weather .temp { font-size: 46px; font-weight: 300; line-height: 1.1; letter-spacing: -.03em; }
+.weather .sky { opacity: .9; font-size: 14px; }
+.weather .w-icon { font-size: 48px; filter: drop-shadow(0 6px 14px rgba(0,0,0,.25)); animation: float 4s ease-in-out infinite; }
+.weather .w-meta { display: flex; gap: 14px; font-size: 12.5px; opacity: .85; margin-top: 8px; flex-wrap: wrap; }
+.weather .days { display: flex; gap: 8px; margin-top: 14px; overflow-x: auto; padding-bottom: 2px; }
+.weather .day { flex: none; min-width: 78px; text-align: center; padding: 8px 6px; border-radius: 12px; background: rgba(255,255,255,.14); font-size: 12px; }
+.weather .day b { display: block; font-size: 15px; font-weight: 600; }
+.currency .c-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.currency .c-big { font-size: 30px; font-weight: 650; letter-spacing: -.02em; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.currency .c-sub { color: var(--muted); font-size: 13px; }
+.currency .up { color: var(--ok); } .currency .down { color: var(--danger); }
+.reminder { display: flex; gap: 12px; align-items: center; }
+.reminder .bell { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--grad); color: #fff; font-size: 20px; animation: ring 1.6s ease .2s 2; }
+.reminder small { color: var(--muted); display: block; }
+
+.composer-wrap { flex: none; padding: 0 20px 18px; }
+.composer {
+  max-width: 760px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
+  box-shadow: var(--shadow); padding: 10px 10px 10px 18px; display: flex; align-items: flex-end; gap: 8px;
+  transition: border-color .25s, box-shadow .25s; position: relative;
+}
+.composer:focus-within { border-color: color-mix(in srgb, var(--accent) 50%, var(--border)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent), var(--shadow); }
+.composer textarea { flex: 1; border: 0; outline: 0; resize: none; background: transparent; max-height: 220px; min-height: 26px; padding: 6px 0; line-height: 1.55; }
+.composer textarea::placeholder { color: var(--faint); }
+.send {
+  width: 38px; height: 38px; border-radius: 13px; display: grid; place-items: center; background: var(--grad); color: #fff;
+  transition: transform .2s cubic-bezier(.2,.8,.2,1), opacity .2s, filter .2s; flex: none;
+}
+.send:disabled { opacity: .35; cursor: default; filter: grayscale(.6); }
+.send:not(:disabled):hover { transform: scale(1.06) rotate(-4deg); }
+.send svg { width: 18px; height: 18px; }
+.send.stop { background: var(--text); }
+.mic { color: var(--faint); }
+.hint { max-width: 760px; margin: 8px auto 0; text-align: center; font-size: 12px; color: var(--faint); }
+
+.overlay { position: fixed; inset: 0; background: rgba(10,10,14,.45); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+.overlay.open { display: flex; animation: fadeIn .25s ease both; }
+.modal { width: 100%; max-width: 520px; max-height: 80vh; overflow: auto; background: var(--surface); border-radius: 20px; box-shadow: var(--shadow-lg); padding: 22px; animation: pop .35s cubic-bezier(.2,.8,.2,1) both; border: 1px solid var(--border); }
+.modal h3 { margin: 0 0 4px; font-size: 18px; }
+.modal .sub { color: var(--muted); font-size: 13.5px; margin-bottom: 16px; }
+.mem { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 8px; animation: fadeIn .3s ease both; }
+.mem span { flex: 1; }
+.mem small { color: var(--faint); }
+.empty { color: var(--faint); text-align: center; padding: 24px 0; }
+.toasts { position: fixed; top: 16px; right: 16px; display: grid; gap: 10px; z-index: 60; }
+.toast { background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-lg); border-radius: 16px; padding: 12px 14px; display: flex; gap: 12px; align-items: center; min-width: 260px; max-width: 360px; animation: toastIn .5s cubic-bezier(.2,.8,.2,1) both; }
+.toast.out { animation: toastOut .4s ease both; }
+.toast .bell { font-size: 22px; animation: ring 1.2s ease 3; }
+.toast small { color: var(--muted); display: block; }
+.scrim { display: none; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes drift { 0%,100% { transform: translate(0,0); } 50% { transform: translate(6%, 4%); } }
+@keyframes breathe { 0%,100% { transform: scale(1); opacity: .32; } 50% { transform: scale(1.12); opacity: .5; } }
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(.9); } }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes msgIn { from { opacity: 0; transform: translateY(10px) scale(.99); } to { opacity: 1; transform: none; } }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop { from { opacity: 0; transform: scale(.94) translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes blink { 0%,100% { opacity: .25; transform: scale(.8); } 50% { opacity: 1; transform: scale(1); } }
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: -200% 0; } }
+@keyframes sheen { 0%,70%,100% { background-position: 100% 0; } 85% { background-position: 0% 0; } }
+@keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(245,165,36,.55); } 80%,100% { box-shadow: 0 0 0 8px rgba(245,165,36,0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes ring { 0%,100% { transform: rotate(0); } 15% { transform: rotate(14deg); } 30% { transform: rotate(-12deg); } 45% { transform: rotate(8deg); } 60% { transform: rotate(-5deg); } }
+@keyframes toastIn { from { opacity: 0; transform: translateX(30px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes toastOut { to { opacity: 0; transform: translateX(30px); } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+
+@media (max-width: 820px) {
+  .sidebar { position: fixed; inset: 0 auto 0 0; box-shadow: var(--shadow-lg); }
+  .scrim.show { display: block; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 15; animation: fadeIn .2s; }
+  .thread { padding: 8px 16px 32px; }
+  .composer-wrap { padding: 0 16px 14px; }
+  .suggestions { grid-template-columns: 1fr; }
+  .msg.bot { grid-template-columns: 28px 1fr; gap: 10px; }
+  .msg.bot .orb.md { width: 28px; height: 28px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="orb md"></div>
+      <div style="flex:1">
+        <div class="brand-name">OMZU</div>
+        <div class="brand-sub">Ozodbek Muhammadov</div>
+      </div>
+      <button class="icon-btn" id="collapseBtn" title="Yon panelni yopish">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>
+      </button>
+    </div>
+    <button class="new-chat" id="newChat"><span class="plus">+</span> Yangi suhbat</button>
+    <div class="conv-list" id="convList"></div>
+    <div class="side-foot">
+      <button class="side-row" id="memBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0-6 6c0 2.2 1.2 3.6 2.2 4.6.6.6.8 1.1.8 1.9V17h6v-1.5c0-.8.2-1.3.8-1.9C16.8 12.6 18 11.2 18 9a6 6 0 0 0-6-6z"/><path d="M9.5 20.5h5"/></svg>
+        Xotira
+      </button>
+      <button class="side-row" id="remBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>
+        Eslatmalar
+      </button>
+      <button class="side-row" id="themeBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <span id="themeLabel">Mavzu</span>
+      </button>
+      <div class="status-pill"><span class="status-dot" id="statusDot"></span><span id="statusText">Ulanmoqda…</span></div>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <main class="main">
+    <div class="topbar">
+      <button class="icon-btn" id="openSide" title="Yon panel" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>
+      </button>
+      <div class="title" id="convTitle"></div>
+    </div>
+    <div class="scroller" id="scroller">
+      <div class="thread" id="thread"></div>
+    </div>
+    <div class="composer-wrap">
+      <form class="composer" id="composer">
+        <textarea id="input" rows="1" placeholder="OMZU'ga yozing…" autocomplete="off"></textarea>
+        <button type="button" class="icon-btn mic" title="Ovozli kiritish — tez orada" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+        </button>
+        <button class="send" id="sendBtn" type="submit" disabled title="Yuborish">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        </button>
+      </form>
+      <div class="hint">OMZU xato qilishi mumkin. Muhim maʼlumotlarni tekshiring.</div>
+    </div>
+  </main>
+</div>
+
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const thread = $("#thread"), scroller = $("#scroller"), input = $("#input"), sendBtn = $("#sendBtn");
+const state = { cid: null, streaming: false, abort: null, convs: [] };
+const USER = "Ozodbek";
+
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+};
+
+function applyTheme(t) {
+  if (t) document.documentElement.setAttribute("data-theme", t);
+  else document.documentElement.removeAttribute("data-theme");
+  $("#themeLabel").textContent = t === "dark" ? "Tungi rejim" : t === "light" ? "Kunduzgi rejim" : "Tizim mavzusi";
+}
+applyTheme(store.get("omzu-theme"));
+$("#themeBtn").onclick = () => {
+  const cur = store.get("omzu-theme");
+  const next = cur === "dark" ? "light" : cur === "light" ? "" : "dark";
+  store.set("omzu-theme", next); applyTheme(next || null);
+};
+
+const sidebar = $("#sidebar"), scrim = $("#scrim"), openSide = $("#openSide");
+const isMobile = () => matchMedia("(max-width: 820px)").matches;
+function setSidebar(open) {
+  sidebar.classList.toggle("collapsed", !open);
+  openSide.style.display = open ? "none" : "grid";
+  scrim.classList.toggle("show", open && isMobile());
+}
+$("#collapseBtn").onclick = () => setSidebar(false);
+openSide.onclick = () => setSidebar(true);
+scrim.onclick = () => setSidebar(false);
+if (isMobile()) setSidebar(false);
+
+function esc(s) { return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function inline(s) {
+  return s
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>")
+    .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+}
+function md(src) {
+  const lines = esc(src).split("\n");
+  let html = "", list = null, para = [], code = null;
+  const flushP = () => { if (para.length) { html += `<p>${inline(para.join("<br>"))}</p>`; para = []; } };
+  const flushL = () => { if (list) { html += `</${list}>`; list = null; } };
+  for (const ln of lines) {
+    if (ln.startsWith("```")) {
+      if (code === null) { flushP(); flushL(); code = []; } else { html += `<pre><code>${code.join("\n")}</code></pre>`; code = null; }
+      continue;
+    }
+    if (code !== null) { code.push(ln); continue; }
+    const ul = ln.match(/^\s*[-•]\s+(.*)/), ol = ln.match(/^\s*\d+[.)]\s+(.*)/);
+    if (ul || ol) {
+      flushP(); const t = ul ? "ul" : "ol";
+      if (list !== t) { flushL(); html += `<${t}>`; list = t; }
+      html += `<li>${inline((ul || ol)[1])}</li>`; continue;
+    }
+    if (!ln.trim()) { flushP(); flushL(); continue; }
+    flushL();
+    const h = ln.match(/^(#{1,3})\s+(.*)/);
+    if (h) { flushP(); html += `<p><strong>${inline(h[2])}</strong></p>`; continue; }
+    para.push(ln);
+  }
+  if (code !== null) html += `<pre><code>${code.join("\n")}</code></pre>`;
+  flushP(); flushL();
+  return html;
+}
+
+const SUGGESTIONS = [
+  { em: "🌤", t: "Ob-havo", s: "Samarqandda ertaga ob-havo qanday?" },
+  { em: "💵", t: "Valyuta kursi", s: "100 dollar necha soʻm?" },
+  { em: "⏰", t: "Eslatma", s: "30 daqiqadan keyin choyni eslat" },
+  { em: "📚", t: "Bilim", s: "Mirzo Ulugʻbek kim?" },
+];
+function greeting() {
+  const h = new Date().getHours();
+  return h < 5 ? "Xayrli tun" : h < 12 ? "Xayrli tong" : h < 18 ? "Xayrli kun" : "Xayrli kech";
+}
+function renderWelcome() {
+  thread.innerHTML = `
+    <div class="welcome">
+      <div class="orb xl"><div class="glow"></div></div>
+      <h1>${greeting()}, ${USER}</h1>
+      <p>Bugun sizga qanday yordam bera olaman?</p>
+      <div class="suggestions">
+        ${SUGGESTIONS.map((x, i) => `<button class="sugg" style="animation-delay:${.15 + i * .07}s" data-q="${esc(x.s)}">
+          <b><span class="em">${x.em}</span>${x.t}</b><small>${esc(x.s)}</small></button>`).join("")}
+      </div>
+    </div>`;
+  thread.querySelectorAll(".sugg").forEach(b => b.onclick = () => send(b.dataset.q));
+  $("#convTitle").textContent = "";
+}
+
+const SKY_ICON = [["momaqaldiroq", "⛈"], ["qor", "❄️"], ["jala", "🌧"], ["yomg'ir", "🌧"], ["tuman", "🌫"], ["bulutli", "☁️"], ["qisman", "⛅"], ["ochiq", "☀️"]];
+const skyIcon = s => (SKY_ICON.find(([k]) => s.includes(k)) || [0, "🌤"])[1];
+const fmt = n => Number(n).toLocaleString("ru-RU", { maximumFractionDigits: 2 }).replace(/,/g, ".");
+function toolCard(ev) {
+  const r = ev.result || {};
+  if (r.error) return "";
+  if (ev.name === "weather") {
+    const n = r.now, sky = n.sky;
+    const cls = /yomg|jala|momaq/.test(sky) ? "rain" : n.temp_c >= 24 ? "warm" : n.temp_c <= 5 ? "cold" : "";
+    const days = r.forecast.length > 1 ? `<div class="days">${r.forecast.map(d => {
+      const wd = ["Ya", "Du", "Se", "Ch", "Pa", "Ju", "Sh"][new Date(d.date + "T12:00").getDay()];
+      return `<div class="day">${esc(wd)}<div style="font-size:20px">${skyIcon(d.sky)}</div><b>${Math.round(d.max_c)}°</b>${Math.round(d.min_c)}°</div>`;
+    }).join("")}</div>` : "";
+    return `<div class="card weather ${cls}">
+      <div class="w-top"><div><div class="city">${esc(r.city)}${r.country ? ", " + esc(r.country) : ""}</div>
+      <div class="temp">${Math.round(n.temp_c)}°</div><div class="sky">${esc(sky)}</div></div>
+      <div class="w-icon">${skyIcon(sky)}</div></div>
+      <div class="w-meta"><span>His qilinishi ${Math.round(n.feels_like_c)}°</span><span>Namlik ${n.humidity}%</span><span>Shamol ${Math.round(n.wind_kmh)} km/s</span></div>${days}</div>`;
+  }
+  if (ev.name === "currency") {
+    const ch = r.change || 0, dir = ch > 0 ? "up" : ch < 0 ? "down" : "";
+    return `<div class="card currency"><div class="c-sub">${esc(r.name || r.currency)} · Markaziy bank · ${esc(r.date || "")}</div>
+      <div class="c-row"><span class="c-big">${fmt(r.amount !== 1 ? r.total_uzs : r.rate_uzs)} soʻm</span>
+      <span class="c-sub">${r.amount !== 1 ? fmt(r.amount) + " " + r.currency : "1 " + r.currency}
+      ${ch ? `<span class="${dir}"> ${ch > 0 ? "▲" : "▼"} ${fmt(Math.abs(ch))}</span>` : ""}</span></div></div>`;
+  }
+  if (ev.name === "add_reminder") {
+    return `<div class="card reminder"><div class="bell">⏰</div><div><b>${esc(r.text)}</b><small>${esc(r.due)}</small></div></div>`;
+  }
+  return "";
+}
+
+const ICONS = {
+  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>',
+  up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v10H4V10zM7 10l4-7a2 2 0 0 1 3 2l-1 5h6a2 2 0 0 1 2 2.3l-1.4 7A2 2 0 0 1 17.6 21H7"/></svg>',
+  down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 14V4h3v10zM17 14l-4 7a2 2 0 0 1-3-2l1-5H5a2 2 0 0 1-2-2.3l1.4-7A2 2 0 0 1 6.4 3H17"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg>',
+};
+function addUser(text) {
+  const el = document.createElement("div");
+  el.className = "msg user";
+  el.innerHTML = `<div class="bubble">${esc(text)}</div>`;
+  thread.appendChild(el); return el;
+}
+function addBot() {
+  const el = document.createElement("div");
+  el.className = "msg bot";
+  el.innerHTML = `<div class="orb md busy"></div><div class="body"><div class="status">O'ylanmoqda…</div>
+    <div class="cards"></div><div class="sources"></div><div class="content caret"></div>
+    <div class="actions"></div></div>`;
+  thread.appendChild(el); return el;
+}
+function setActions(el, mid, text, rating) {
+  const a = $(".actions", el);
+  a.innerHTML = `<button class="icon-btn" data-a="copy" title="Nusxa olish">${ICONS.copy}</button>
+    <button class="icon-btn ${rating === 1 ? "on" : ""}" data-a="up" title="Yaxshi javob">${ICONS.up}</button>
+    <button class="icon-btn ${rating === -1 ? "on neg" : ""}" data-a="down" title="Yomon javob">${ICONS.down}</button>`;
+  a.onclick = async e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.a === "copy") {
+      try { await navigator.clipboard.writeText(text); } catch {}
+      b.innerHTML = ICONS.check; setTimeout(() => b.innerHTML = ICONS.copy, 1400);
+    } else if (b.dataset.a === "up") {
+      a.querySelectorAll(".on").forEach(x => x.classList.remove("on", "neg")); b.classList.add("on");
+      $(".correction", el)?.remove();
+      fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message_id: mid, rating: 1 }) });
+      toast("👍", "Rahmat!", "Bu javob oʻqitish uchun yaxshi namuna sifatida saqlandi.");
+    } else if (b.dataset.a === "down") {
+      a.querySelectorAll(".on").forEach(x => x.classList.remove("on", "neg")); b.classList.add("on", "neg");
+      fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message_id: mid, rating: -1 }) });
+      if (!$(".correction", el)) {
+        const c = document.createElement("div"); c.className = "correction";
+        c.innerHTML = `<textarea placeholder="Toʻgʻri javob qanday boʻlishi kerak edi? (ixtiyoriy — OMZU shundan oʻrganadi)"></textarea>
+          <div class="row"><button class="btn" data-x="cancel">Bekor qilish</button><button class="btn primary" data-x="save">Saqlash</button></div>`;
+        $(".body", el).appendChild(c); $("textarea", c).focus();
+        c.onclick = ev => {
+          const x = ev.target.dataset.x; if (!x) return;
+          if (x === "save") {
+            const corr = $("textarea", c).value.trim();
+            fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message_id: mid, rating: -1, correction: corr || null }) });
+            toast("📝", "Saqlandi", "Tuzatish keyingi oʻqitishda ishlatiladi.");
+          }
+          c.remove();
+        };
+      }
+    }
+  };
+}
+function fillBot(el, m) {
+  $(".orb", el).classList.remove("busy");
+  $(".status", el).remove();
+  const ex = m.extra || {};
+  $(".cards", el).innerHTML = (ex.tools || []).map(toolCard).join("");
+  $(".sources", el).innerHTML = (ex.sources || []).map(s => `<span class="chip"><i></i>${esc(s.title)}</span>`).join("");
+  const c = $(".content", el); c.classList.remove("caret"); c.innerHTML = md(m.content);
+  setActions(el, m.id, m.content, m.rating);
+}
+
+const nearBottom = () => scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 140;
+const toBottom = (force) => { if (force || nearBottom()) scroller.scrollTop = scroller.scrollHeight; };
+
+async function send(text) {
+  text = (text ?? input.value).trim();
+  if (!text || state.streaming) return;
+  if (!state.cid) thread.innerHTML = "";
+  input.value = ""; autosize(); updateSend();
+  addUser(text);
+  const bot = addBot(); toBottom(true);
+  state.streaming = true; updateSend();
+  const ctrl = new AbortController(); state.abort = ctrl;
+  let full = "", mid = null, firstToken = true;
+  const content = $(".content", bot);
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text, conversation_id: state.cid }), signal: ctrl.signal,
+    });
+    const reader = res.body.getReader(), dec = new TextDecoder();
+    let buf = "";
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n\n")) >= 0) {
+        const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
+        if (!chunk.startsWith("data: ")) continue;
+        const ev = JSON.parse(chunk.slice(6));
+        if (ev.type === "meta") {
+          mid = ev.message_id;
+          if (state.cid !== ev.conversation_id) { state.cid = ev.conversation_id; $("#convTitle").textContent = text.slice(0, 80); loadConvs(); }
+        } else if (ev.type === "status") {
+          const st = $(".status", bot); if (st) st.textContent = ev.text;
+        } else if (ev.type === "tool") {
+          $(".cards", bot).insertAdjacentHTML("beforeend", toolCard(ev));
+        } else if (ev.type === "sources") {
+          $(".sources", bot).innerHTML = ev.items.map((s, k) => `<span class="chip" style="animation-delay:${k * .06}s"><i></i>${esc(s.title)}</span>`).join("");
+        } else if (ev.type === "token") {
+          if (firstToken) { $(".status", bot)?.remove(); firstToken = false; }
+          full += ev.text; content.innerHTML = md(full);
+        }
+        toBottom();
+      }
+    }
+  } catch (e) {
+    if (e.name !== "AbortError") { full += (full ? "\n\n" : "") + "⚠️ Server bilan aloqa uzildi. `python -m uzllm.server` ishlayotganini tekshiring."; content.innerHTML = md(full); }
+  }
+  $(".status", bot)?.remove();
+  $(".orb", bot).classList.remove("busy");
+  content.classList.remove("caret");
+  if (mid) setActions(bot, mid, full, null);
+  state.streaming = false; state.abort = null; updateSend();
+  loadConvs();
+}
+
+function autosize() { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 220) + "px"; }
+const SEND_SVG = sendBtn.innerHTML;
+const STOP_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2.5"/></svg>';
+function updateSend() {
+  sendBtn.classList.toggle("stop", state.streaming);
+  sendBtn.innerHTML = state.streaming ? STOP_SVG : SEND_SVG;
+  sendBtn.disabled = !state.streaming && !input.value.trim();
+  sendBtn.title = state.streaming ? "Toʻxtatish" : "Yuborish";
+}
+input.addEventListener("input", () => { autosize(); updateSend(); });
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); }
+});
+$("#composer").addEventListener("submit", e => {
+  e.preventDefault();
+  if (state.streaming) state.abort?.abort(); else send();
+});
+
+function groupOf(iso) {
+  const d = new Date(iso), now = new Date();
+  const days = Math.floor((new Date(now.toDateString()) - new Date(d.toDateString())) / 864e5);
+  return days === 0 ? "Bugun" : days === 1 ? "Kecha" : days < 7 ? "Shu hafta" : "Avvalroq";
+}
+async function loadConvs() {
+  try { state.convs = await (await fetch("/api/conversations")).json(); } catch { return; }
+  const list = $("#convList"); let html = "", last = "";
+  for (const c of state.convs) {
+    const g = groupOf(c.updated);
+    if (g !== last) { html += `<div class="conv-group">${g}</div>`; last = g; }
+    html += `<div class="conv ${c.id === state.cid ? "active" : ""}" data-id="${c.id}"><span>${esc(c.title || "Suhbat")}</span>
+      <button class="del" data-del="${c.id}" title="Oʻchirish"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div>`;
+  }
+  list.innerHTML = html || `<div class="conv-group">Suhbatlar shu yerda koʻrinadi</div>`;
+}
+$("#convList").onclick = async e => {
+  const del = e.target.closest("[data-del]");
+  if (del) {
+    e.stopPropagation();
+    await fetch(`/api/conversations/${del.dataset.del}`, { method: "DELETE" });
+    if (state.cid === del.dataset.del) newChat();
+    loadConvs(); return;
+  }
+  const c = e.target.closest(".conv"); if (c) openConv(c.dataset.id);
+};
+async function openConv(id) {
+  if (state.streaming) return;
+  state.cid = id; loadConvs();
+  const msgs = await (await fetch(`/api/conversations/${id}`)).json();
+  thread.innerHTML = "";
+  for (const m of msgs) {
+    if (m.role === "user") addUser(m.content);
+    else fillBot(addBot(), m);
+  }
+  $("#convTitle").textContent = (state.convs.find(c => c.id === id) || {}).title || "";
+  toBottom(true);
+  if (isMobile()) setSidebar(false);
+}
+function newChat() {
+  if (state.streaming) state.abort?.abort();
+  state.cid = null; renderWelcome(); loadConvs(); input.focus();
+  if (isMobile()) setSidebar(false);
+}
+$("#newChat").onclick = newChat;
+
+const overlay = $("#overlay"), modal = $("#modal");
+overlay.onclick = e => { if (e.target === overlay) overlay.classList.remove("open"); };
+document.addEventListener("keydown", e => { if (e.key === "Escape") overlay.classList.remove("open"); });
+async function showMemories() {
+  const mems = await (await fetch("/api/memories")).json();
+  modal.innerHTML = `<h3>🧠 Xotira</h3><div class="sub">OMZU siz haqingizda eslab qolgan narsalar. Ular modelning ichida emas, faqat shu kompyuterda saqlanadi.</div>
+    ${mems.length ? mems.map((m, i) => `<div class="mem" style="animation-delay:${i * .04}s"><span>${esc(m.fact)}<br><small>${esc(m.created)}</small></span>
+      <button class="icon-btn" data-forget="${m.id}" title="Unutish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div>`).join("")
+      : `<div class="empty">Hozircha boʻsh. «Eslab qol: …» deb yozing.</div>`}
+    <div style="text-align:right;margin-top:12px"><button class="btn" id="closeModal">Yopish</button></div>`;
+  overlay.classList.add("open");
+  $("#closeModal").onclick = () => overlay.classList.remove("open");
+  modal.querySelectorAll("[data-forget]").forEach(b => b.onclick = async () => { await fetch(`/api/memories/${b.dataset.forget}`, { method: "DELETE" }); showMemories(); });
+}
+async function showReminders() {
+  const rs = await (await fetch("/api/reminders")).json();
+  modal.innerHTML = `<h3>⏰ Eslatmalar</h3><div class="sub">Vaqti kelganda shu sahifada xabar chiqadi (sahifa ochiq turishi kerak).</div>
+    ${rs.length ? rs.map(r => `<div class="mem"><span>${esc(r.text)}<br><small>${esc(r.due)}</small></span></div>`).join("") : `<div class="empty">Faol eslatmalar yoʻq.</div>`}
+    <div style="text-align:right;margin-top:12px"><button class="btn" id="closeModal">Yopish</button></div>`;
+  overlay.classList.add("open");
+  $("#closeModal").onclick = () => overlay.classList.remove("open");
+}
+$("#memBtn").onclick = showMemories;
+$("#remBtn").onclick = showReminders;
+
+function toast(icon, title, text, ms = 4200) {
+  const t = document.createElement("div"); t.className = "toast";
+  t.innerHTML = `<div class="bell">${icon}</div><div><b>${esc(title)}</b><small>${esc(text)}</small></div>`;
+  $("#toasts").appendChild(t);
+  setTimeout(() => { t.classList.add("out"); setTimeout(() => t.remove(), 400); }, ms);
+}
+function chime() {
+  try {
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    [660, 880, 990].forEach((f, i) => {
+      const o = ac.createOscillator(), g = ac.createGain(); o.frequency.value = f; o.type = "sine";
+      g.gain.setValueAtTime(0.0001, ac.currentTime + i * .18); g.gain.exponentialRampToValueAtTime(.18, ac.currentTime + i * .18 + .02);
+      g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + i * .18 + .5);
+      o.connect(g).connect(ac.destination); o.start(ac.currentTime + i * .18); o.stop(ac.currentTime + i * .18 + .55);
+    });
+  } catch {}
+}
+async function pollReminders() {
+  try {
+    const due = await (await fetch("/api/reminders/due")).json();
+    for (const r of due) {
+      toast("⏰", "Eslatma", `${r.text} — ${r.due}`, 15000); chime();
+      if ("Notification" in window && Notification.permission === "granted") new Notification("OMZU — eslatma", { body: r.text });
+    }
+  } catch {}
+}
+document.addEventListener("click", () => {
+  if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
+}, { once: true });
+setInterval(pollReminders, 20000);
+
+async function loadStatus() {
+  try {
+    const s = await (await fetch("/api/status")).json();
+    $("#statusText").textContent = s.label;
+    $("#statusDot").classList.toggle("model", s.mode === "model");
+  } catch { $("#statusText").textContent = "Server bilan aloqa yoʻq"; }
+}
+
+renderWelcome(); loadConvs(); loadStatus(); pollReminders(); input.focus();
+</script>
+</body>
+</html>
